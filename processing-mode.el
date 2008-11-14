@@ -66,14 +66,14 @@ running on will be selected."
 			    "./lib/ecj.jar" "./lib/jna.jar"
 			    "./lib/pde.jar"))
 		   "\" processing.app.Commander"
-		   " --sketch=" (expand-file-name sketch-dir)
-		   " --output=" (expand-file-name output-dir)
-		   " --" cmd
+		   " --sketch=\"" (expand-file-name sketch-dir)
+		   "\" --output=\"" (expand-file-name output-dir)
+		   "\" --" cmd
 		   (if (string= cmd "export-application")
 		       (concat " --platform="
 			       (if platform platform (processing-platform)))))))
 
-(defun processing-compile (&optional cmd)
+(defun processing-sketch-compile (&optional cmd)
   "Runs the Processing Commander application with the current
 buffer. The output directory is the sub-directory ``output''
 which will be found in the parent directory of the buffer file."
@@ -82,6 +82,14 @@ which will be found in the parent directory of the buffer file."
   (let ((sketch-dir (file-name-directory buffer-file-name)))
     (processing-commander sketch-dir (concat sketch-dir "output") (if cmd cmd "run"))))
 
+(defun processing-sketch-present ()
+  (interactive)
+  (processing-sketch-compile "present"))
+
+(defun processing-sketch-build ()
+  (interactive)
+  (processing-sketch-compile "build"))
+
 (defun processing-export-application ()
   "Turns the Processing sketch into a Java application. Assumes
 that the platform target is whatever platform Emacs is running
@@ -89,8 +97,9 @@ on."
   t)
 
 ;; Key bindings
-(define-key processing-mode-map
-  "\C-c\C-r" 'processing-compile)
+(define-key processing-mode-map "\C-c\C-r" 'processing-sketch-compile)
+(define-key processing-mode-map "\C-c\C-p" 'processing-sketch-present)
+(define-key processing-mode-map "\C-c\C-b" 'processing-sketch-build)
 
 ;; Font-lock, keywords
 (defconst processing-font-lock-keywords-1
