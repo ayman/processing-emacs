@@ -73,26 +73,14 @@ running on will be selected."
 		       (concat " --platform="
 			       (if platform platform (processing-platform)))))))
 
-(defun processing-preprocess-sketch ()
-  "Preprocess a sketch into .java files."
-  ;(processing-commander "~/sketchbook/test" "~/sketchbook/test/output" "run")
-  t)
-
-(defun processing-build-sketch ()
-  "Preprocess and compile a sketch into .class files."
-  t)
-
-(defun processing-run-sketch ()
-  "Preprocess, compile, and run a Processing sketch."
-  t)
-
-(defun processing-present-sketch ()
-  "Preprocess, compile, and run a Processing sketch full screen."
-  t)
-
-(defun processing-export-applet ()
-  "Turns the Processing sketch into a Java applet."
-  t)
+(defun processing-compile (&optional cmd)
+  "Runs the Processing Commander application with the current
+buffer. The output directory is the sub-directory ``output''
+which will be found in the parent directory of the buffer file."
+  (interactive)
+  ;; TODO: Add support for temporary sketches
+  (let ((sketch-dir (file-name-directory buffer-file-name)))
+    (processing-commander sketch-dir (concat sketch-dir "output") (if cmd cmd "run"))))
 
 (defun processing-export-application ()
   "Turns the Processing sketch into a Java application. Assumes
@@ -102,7 +90,7 @@ on."
 
 ;; Key bindings
 (define-key processing-mode-map
-  [C-c C-r] 'processing-run-sketch)
+  "\C-c\C-r" 'processing-compile)
 
 ;; Font-lock, keywords
 (defconst processing-font-lock-keywords-1
