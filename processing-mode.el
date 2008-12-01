@@ -57,21 +57,24 @@ When ``cmd'' is set to \"export-application\", the ``platform''
 must be set to one of \"windows\", \"macosx\", or \"linux\". If
 no platform is selected, the default platform that Emacs is
 running on will be selected."
-  (cd (expand-file-name processing-location))
-  (compile (concat  "./java/bin/java -classpath \""
-		   (apply 'make-java-classpath
-			  '("./java/lib/rt.jar"
-			    "./java/lib/tools.jar"
-			    "./lib/antlr.jar" "./lib/core.jar"
-			    "./lib/ecj.jar" "./lib/jna.jar"
-			    "./lib/pde.jar"))
-		   "\" processing.app.Commander"
-		   " --sketch=\"" (expand-file-name sketch-dir)
-		   "\" --output=\"" (expand-file-name output-dir)
-		   "\" --" cmd
-		   (if (string= cmd "export-application")
-		       (concat " --platform="
-			       (if platform platform (processing-platform)))))))
+  ;;(cd (expand-file-name processing-location))
+  (compile (concat  processing-location "java/bin/java -classpath \""
+		    (apply 'make-java-classpath
+			   (mapcar (lambda (x) (expand-file-name (concat processing-location x)))
+				   '("java/lib/rt.jar"
+				     "java/lib/tools.jar"
+				     "lib/antlr.jar" "lib/core.jar"
+				     "lib/ecj.jar" "lib/jna.jar"
+				     "lib/pde.jar")))
+		    "\" processing.app.Commander"
+		    " --sketch=\"" (expand-file-name sketch-dir)
+		    "\" --output=\"" (expand-file-name output-dir)
+		    ;; Remove this comment when Processing implements the --preferences=??? command-line option.
+		    ;;"\" --preferences=\"" (expand-file-name "~/.processing/preferences.txt")
+		    "\" --" cmd
+		    (if (string= cmd "export-application")
+			(concat " --platform="
+				(if platform platform (processing-platform)))))))
 
 (defun processing-sketch-compile (&optional cmd)
   "Runs the Processing Commander application with the current
@@ -100,6 +103,11 @@ on."
 (define-key processing-mode-map "\C-c\C-r" 'processing-sketch-compile)
 (define-key processing-mode-map "\C-c\C-p" 'processing-sketch-present)
 (define-key processing-mode-map "\C-c\C-b" 'processing-sketch-build)
+
+;; Regular expressions
+;; For compilation
+;;(pushnew compilation-error-regexp-alist
+;;	 '(processing "^\\(?:[[:alpha:]]\\)"))
 
 ;; Font-lock, keywords
 (defconst processing-font-lock-keywords-1

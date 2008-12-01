@@ -1,6 +1,8 @@
 Processing mode for Emacs.
 Written by Rudolf Olah.
 
+== About & Usage ==
+
 This mode is a derivative of the java-mode. It adds key-bindings for
 running/compiling Processing sketches and it also highlights keywords
 found in the Processing language, such as ``setup'', ``draw'', and
@@ -17,3 +19,12 @@ install the YASnippet package found here:
 
     http://code.google.com/p/yasnippet/
 
+== Bugs ==
+
+* Compilation...there is a bug in the compilation because the
+  Commander class of Processing does not accept the ``--preferences''
+  option. The workaround is to copy your ``preferences.txt'' from your
+  home directory (in Linux it can be found in ``~/.processing/'') to
+  the sketch directory. You will have to create a sub-directory called
+  ``lib'' in the sketch directory which is where the
+  ``preferences.txt'' file will reside. Sym-linking also works.
