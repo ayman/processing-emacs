@@ -8,6 +8,8 @@
 ;; Copyright (C) 2008 Rudolf Olah <omouse@gmail.com>
 ;; Licensed under the GNU GPL version 3 or later
 
+(require 'compile)
+
 (define-derived-mode processing-mode
   java-mode "Processing"
   "Major mode for Processing.
@@ -105,9 +107,13 @@ on."
 (define-key processing-mode-map "\C-c\C-b" 'processing-sketch-build)
 
 ;; Regular expressions
-;; For compilation
-;;(pushnew compilation-error-regexp-alist
-;;	 '(processing "^\\(?:[[:alpha:]]\\)"))
+;; Compilation
+(pushnew
+ ;; Mode name, REGEXP FILE LINE COLUMN TYPE HYPERLINK HIGHLIGHT
+ '(processing "^\\([[:alnum:]]+.pde\\):\\([0-9]+\\):\\([0-9]+\\):.*$"
+	      1 2 3)
+ compilation-error-regexp-alist-alist)
+(pushnew 'processing compilation-error-regexp-alist)
 
 ;; Font-lock, keywords
 (defconst processing-font-lock-keywords-1
