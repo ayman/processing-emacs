@@ -29,7 +29,13 @@ install the YASnippet package found here:
   ``lib'' in the sketch directory which is where the
   ``preferences.txt'' file will reside. Sym-linking also works.
 
+== Fixed Bugs ==
+
 * Compilation errors...The regular expression used to detect
   compilation error messages does indeed work. Unfortunately there is
   another regular expression that is interfering and being matched
   _before_ it.
+
+  The fix is to shadow the global variable with a local one that
+  narrows down the searchable regex list to a single regexp:
+  'processing.
