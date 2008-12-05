@@ -9,6 +9,7 @@
 ;; Licensed under the GNU GPL version 3 or later
 
 (require 'compile)
+(require 'cl)
 
 (define-derived-mode processing-mode
   java-mode "Processing"
@@ -42,6 +43,52 @@ returns
 
 (defun make-java-classpath (&rest args)
   (apply 'concat-with-delim ":" args))
+
+(defvar processing-import-libraries
+  '((minim "jl1.0" "mp3spi1.9.4" "tritonus_share" "tritonus_aos"
+	   "minim-spi" "minim" "jsminim"))
+  "An alist of library names and the JAR (Java ARchive) files
+required for their use. Each element looks like (library-name
+&REST jar-files) where library-name is a SYMBOL and jar-files are
+strings.")
+
+(defun processing-import-library (library-name)
+  "Generates a STRING that is a Java classpath, delimited by
+colons (\":\"). The paths are constructed from the REST of the
+library found in the alist ``processing-import-libraries''. The
+suffix \".jar\" is added to each string."
+  (make-java-classpath (mapcar (lambda (x) (expand-file-name (concat processing-location
+								     "libraries/"
+								     (symbol-name library-name)
+								     "/library/" x ".jar")))
+			       (rest (assoc library-name processing-import-libraries)))))
+
+(defun processing-read-libraries (sketch-dir)
+  "Returns a LIST of SYMBOLS that are the names of Processing
+libraries. This list if stored in the \"libraries_required.txt\"
+file found in the Processing sketch directory ``sketch-dir''.
+
+If the file does not exist, it is assumed that there are no
+libraries required and NIL is returned.
+
+A general error is signalled if the library is not supported.
+Check the variable ``processing-import-libraries'' to see which
+libraries are supported."
+  (let ((file-name (expand-file-name (concat sketch-dir "libraries_required.txt"))))
+    (if (and (file-exists-p file-name) (file-readable-p file-name))
+	(let ((temp-buf (generate-new-buffer "libraries-required-by-sketch")))
+	  (set-buffer temp-buf)
+	  (insert-file-contents file-name)
+	  (unwind-protect
+	      (loop while (< (point) (buffer-size))
+		    for library-name = (read temp-buf) then (read-temp-buf)
+		    if (assoc library-name processing-import-libraries)
+		    collect library-name
+		    else do (error "Processing-mode does not know how to handle the library %s"
+				   library-name)
+		    do (forward-line))
+	    (kill-buffer temp-buf)))
+      nil)))
 
 (defun processing-commander (sketch-dir output-dir cmd &optional platform)
   "Runs the Processing compiler targetting the sketch files found

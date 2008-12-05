@@ -29,6 +29,31 @@ install the YASnippet package found here:
   ``lib'' in the sketch directory which is where the
   ``preferences.txt'' file will reside. Sym-linking also works.
 
+=== Using Processing Libraries ===
+
+Processing allows developers to extend its functionality with
+libraries. These are collections of JAR (Java ARchive) files that can
+be included with a sketch.
+
+processing-mode handles the inclusion of libraries by opening up a
+file named ``libraries_required.txt'' in the sketch folder. On each
+line of that file will be the name of the library's folder.
+
+As an example, let's say we have a sketch that uses the JavaScript
+library. To include it with the sketch, our ``libraries_required.txt''
+would look like:
+
+    javascript
+
+Just a single line :D processing-mode will do some magic and use the
+following path when including the library with the sketch compilation:
+
+    <processing_path>/libraries/javascript/library/
+
+In the ``library'' sub-folder of all libraries there will be a set of
+JAR files. They will be added to the classpath when the sketch is
+compiled or run.
+
 == Fixed Bugs ==
 
 * Compilation errors...The regular expression used to detect
