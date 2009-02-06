@@ -5,11 +5,24 @@
 ;; Allows compilation of buffers and "sketches" from within Emacs but
 ;; only for more recent versions of Processing.
 
-;; Copyright (C) 2008 Rudolf Olah <omouse@gmail.com>
-;; Licensed under the GNU GPL version 3 or later
+;; Copyright (C) 2008, 2009 Rudolf Olah <omouse@gmail.com>
 
-(require 'compile)
-(require 'cl)
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(eval-when-compile
+  (require 'compile)
+  (require 'cl))
 
 (define-derived-mode processing-mode
   java-mode "Processing"
@@ -31,18 +44,14 @@ downloaded the standalone package.")
   "The platform that Processing is running on. It can be `linux', `macosx' or `windows'.")
 
 ;; Functions
-(defun concat-with-delim (delim &rest strings)
-  "Returns a string that is the concatenation of all ``strings''
-separated by the delimiter ``delim''.
-For example,
-  (concat-with-delim \".\" \"hello\" \"world\")
-returns
-  \"hello.world\"
-"
-  (reduce (lambda (x y) (concat x delim y)) strings))
-
 (defun make-java-classpath (&rest args)
-  (apply 'concat-with-delim ":" args))
+  "Returns a string that is a Java CLASSPATH. Each arg is a
+folder containing .class files or a .jar. The delimiter is based
+on the platform, with MS Windows using \";\", and other platforms
+using \":\"."
+  (reduce (lambda (x y) (concat x (if (string= processing-platform "windows") ";" ":")
+				y))
+	  args))
 
 (defvar processing-import-libraries
   '((minim "jl1.0" "mp3spi1.9.4" "tritonus_share" "tritonus_aos"
@@ -53,10 +62,10 @@ required for their use. Each element looks like (library-name
 strings.")
 
 (defun processing-import-library (library-name)
-  "Generates a STRING that is a Java classpath, delimited by
-colons (\":\"). The paths are constructed from the REST of the
-library found in the alist ``processing-import-libraries''. The
-suffix \".jar\" is added to each string."
+  "Generates a STRING that is a Java classpath. The paths are
+constructed from the REST of the library found in the alist
+``processing-import-libraries''. The suffix \".jar\" is added to
+each string."
   (make-java-classpath (mapcar (lambda (x) (expand-file-name (concat processing-location
 								     "libraries/"
 								     (symbol-name library-name)
@@ -90,11 +99,14 @@ libraries are supported."
 	    (kill-buffer temp-buf)))
       nil)))
 
-(defun processing-commander (sketch-dir output-dir cmd &optional platform)
-  "Runs the Processing compiler targetting the sketch files found
-in ``sketch-dir'', with the output being stored in
-``output-dir''. The command flag that is executed on the sketch
-depends on the type of ``cmd''. Valid types of commands are:
+(defun processing-make-compile-command (sketch-dir output-dir cmd &optional platform)
+  "Returns a string which is the compile-command for Processing
+sketches, targetting the sketch files found in ``sketch-dir'',
+with the output being stored in ``output-dir''. The command flag
+that is executed on the sketch depends on the type of ``cmd''.
+
+Valid types of commands are:
+
   - \"preprocess\"
   - \"build\"
   - \"run\"
@@ -106,24 +118,30 @@ When ``cmd'' is set to \"export-application\", the ``platform''
 must be set to one of \"windows\", \"macosx\", or \"linux\". If
 no platform is selected, the default platform that Emacs is
 running on will be selected."
+  (concat processing-location "java/bin/java -classpath \""
+	  (apply 'make-java-classpath
+		 (mapcar (lambda (x) (expand-file-name (concat processing-location x)))
+			 '("java/lib/rt.jar"
+			   "java/lib/tools.jar"
+			   "lib/antlr.jar" "lib/core.jar"
+			   "lib/ecj.jar" "lib/jna.jar"
+			   "lib/pde.jar")))
+	  "\" processing.app.Commander"
+	  " --sketch=\"" (expand-file-name sketch-dir)
+	  "\" --output=\"" (expand-file-name output-dir)
+	  ;; Remove this comment when Processing implements the --preferences=??? command-line option.
+	  ;;"\" --preferences=\"" (expand-file-name "~/.processing/preferences.txt")
+	  "\" --" cmd
+	  (if (string= cmd "export-application")
+	      (concat " --platform="
+		      (if platform platform (processing-platform))))))
+
+(defun processing-commander (sketch-dir output-dir cmd &optional platform)
+  "Runs the Processing compiler, using a compile-command
+constructed using the ``processing-make-compile-command''
+function."
   (let ((compilation-error-regexp-alist '(processing)))
-    (compile (concat processing-location "java/bin/java -classpath \""
-		     (apply 'make-java-classpath
-			    (mapcar (lambda (x) (expand-file-name (concat processing-location x)))
-				    '("java/lib/rt.jar"
-				      "java/lib/tools.jar"
-				      "lib/antlr.jar" "lib/core.jar"
-				      "lib/ecj.jar" "lib/jna.jar"
-				      "lib/pde.jar")))
-		     "\" processing.app.Commander"
-		     " --sketch=\"" (expand-file-name sketch-dir)
-		     "\" --output=\"" (expand-file-name output-dir)
-		     ;; Remove this comment when Processing implements the --preferences=??? command-line option.
-		     ;;"\" --preferences=\"" (expand-file-name "~/.processing/preferences.txt")
-		     "\" --" cmd
-		     (if (string= cmd "export-application")
-			 (concat " --platform="
-				 (if platform platform (processing-platform))))))))
+    (compile (processing-make-compile-command sketch-dir output-dir cmd platform))))
 
 (defun processing-sketch-compile (&optional cmd)
   "Runs the Processing Commander application with the current
@@ -139,6 +157,9 @@ which will be found in the parent directory of the buffer file."
   (processing-sketch-compile "present"))
 
 (defun processing-sketch-build ()
+  "Runs the build command for a Processing sketch. Processing
+will process the sketch into .java files and then compile them
+into .class files."
   (interactive)
   (processing-sketch-compile "build"))
 
@@ -147,6 +168,16 @@ which will be found in the parent directory of the buffer file."
 that the platform target is whatever platform Emacs is running
 on."
   t)
+
+;; Add hook so that when processing-mode is loaded, the local variable
+;; 'compile-command is set.
+(add-hook 'processing-mode-hook
+	  (lambda ()
+	    (let ((sketch-dir (file-name-directory buffer-file-name)))
+	      (set (make-local-variable 'compile-command)
+		   (processing-make-compile-command sketch-dir
+						    (concat sketch-dir "output")
+						    "build")))))
 
 ;; Key bindings
 (define-key processing-mode-map "\C-c\C-r" 'processing-sketch-compile)
@@ -164,7 +195,7 @@ on."
 ;; Font-lock, keywords
 (defconst processing-font-lock-keywords-1
   (eval-when-compile
-    `(;; Shape functions
+    `( ;; Shape functions
       (,(concat
 	 (regexp-opt '("triangle" "line" "arc" "point" "quad" "ellipse"
 		       "rect" "curve" "bezier")
@@ -212,8 +243,7 @@ on."
 	 ("ell" "ellipse(${x}, ${y}, ${width}, ${height});" "ellipse" nil)
 	 ("rect" "rect(${x}, ${y}, ${width}, ${height});" "rect" nil)
 	 
-	 ;; Color
-       ;;; Setting
+	 ;; Color Setting
 	 ("background" "background(${gray_or_color_or_hex});" "background .." nil)
 	 ("background.ca" "background(${gray_or_color_or_hex}, ${alpha});"
 	  "background .. alpha" nil)
@@ -240,3 +270,5 @@ on."
   (progn
     (message "processing-mode: YASnippets not installed. Not defining any snippets.")
     nil))
+
+(provide 'processing-mode)
