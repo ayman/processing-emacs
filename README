@@ -1,12 +1,25 @@
 Processing mode for Emacs.
 Written by Rudolf Olah.
 
-== About & Usage ==
+Licensed under the GNU GPL version 3 or later.
+
+== About ==
 
 This mode is a derivative of the java-mode. It adds key-bindings for
 running/compiling Processing sketches and it also highlights keywords
 found in the Processing language, such as ``setup'', ``draw'', and
 ``frameRate''.
+
+== Setup ==
+
+In your .emacs file, add this:
+
+    (add-to-list 'load-path "/path/to/processing-emacs/")
+    (autoload 'processing-mode "processing-mode" "Processing mode" t)
+    (add-to-list 'auto-mode-alist '("\\.pde$" . processing-mode))
+    (setq processing-location "/path/to/processing")
+
+== Usage ==
 
 The key-bindings are:
 
