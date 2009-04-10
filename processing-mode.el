@@ -118,7 +118,8 @@ When ``cmd'' is set to \"export-application\", the ``platform''
 must be set to one of \"windows\", \"macosx\", or \"linux\". If
 no platform is selected, the default platform that Emacs is
 running on will be selected."
-  (concat processing-location "java/bin/java -classpath \""
+  (concat (file-name-as-directory processing-location)
+	  "java/bin/java -classpath \""
 	  (apply 'make-java-classpath
 		 (mapcar (lambda (x) (expand-file-name (concat processing-location x)))
 			 '("java/lib/rt.jar"

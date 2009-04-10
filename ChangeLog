@@ -1,3 +1,9 @@
+2009-04-10  Rudolf  <omouse@gmail.com>
+
+	* processing-make-compile-command: Added conversion for
+	processing-location variable. It has to be treated as a directory
+	name otherwise the path concatenation will not work.
+
 2009-02-06  Rudolf Olah  <omouse@gmail.com>
 
 	* processing-mode.el: Added proper licensing notice for GPLv3 to
